@@ -10,6 +10,7 @@ from panda3d.bullet import BulletTriangleMesh
 from panda3d.bullet import BulletTriangleMeshShape
 
 from panda3d.bullet import BulletDebugNode
+from pandac.PandaModules import GeomVertexFormat, GeomVertexData, GeomVertexWriter, GeomTriangles, Geom, GeomNode, NodePath, GeomPoints
 """
 from panda3d.core import loadPrcFileData
 loadPrcFileData("", "window-type offscreen" ) # Spawn an offscreen buffer
@@ -58,6 +59,52 @@ def build_bullet_from_model(modelNP):
     return body
 
 
+class BoxMaker:
+    def __init__(self,w,h,d):
+        # self.smooth = True/False
+        # self.uv = True/False or Spherical/Box/...
+        # self.color = Method1/Method2/...
+        # self.subdivide = 0/1/2/...
+        self.w = w
+        self.h = h
+        self.d = d
+
+    def generate(self):
+        format = GeomVertexFormat.getV3()
+        data = GeomVertexData("Data", format, Geom.UHStatic)
+        vertices = GeomVertexWriter(data, "vertex")
+
+        vertices.addData3f(-self.w, -self.h, -self.d)
+        vertices.addData3f(+self.w, -self.h, -self.d)
+        vertices.addData3f(-self.w, +self.h, -self.d)
+        vertices.addData3f(+self.w, +self.h, -self.d)
+        vertices.addData3f(-self.w, -self.h, +self.d)
+        vertices.addData3f(+self.w, -self.h, +self.d)
+        vertices.addData3f(-self.w, +self.h, +self.d)
+        vertices.addData3f(+self.w, +self.h, +self.d)
+
+        triangles = GeomTriangles(Geom.UHStatic)
+
+        def addQuad(v0, v1, v2, v3):
+            triangles.addVertices(v0, v1, v2)
+            triangles.addVertices(v0, v2, v3)
+            triangles.closePrimitive()
+
+        addQuad(4, 5, 7, 6) # Z+
+        addQuad(0, 2, 3, 1) # Z-
+        addQuad(3, 7, 5, 1) # X+
+        addQuad(4, 6, 2, 0) # X-
+        addQuad(2, 6, 7, 3) # Y+
+        addQuad(0, 1, 5, 4) # Y+
+
+        geom = Geom(data)
+        geom.addPrimitive(triangles)
+
+        node = GeomNode("BoxMaker")
+        node.addGeom(geom)
+
+        return NodePath(node)
+
 class MyApp(ShowBase):
  
     def __init__(self):
@@ -85,16 +132,20 @@ class MyApp(ShowBase):
         self.render.setLight(dlnp)
 
         # Reparent the model to render.
-        shape = BulletBoxShape(Vec3(0.1, 0.1, 0.1))
+        shape = BulletBoxShape(Vec3(0.06, 0.12, 0.04))
         node = BulletRigidBodyNode('Box')
-        node.setMass(1.0)
+        node.setMass(0.6)
         node.addShape(shape)
         boxnode = self.render.attachNewNode(node)
         #boxnode.setHpr(90,90,90)   #or whatever you want to rotate to
-        model = self.loader.loadModel('models/box.egg')
-        model.flattenLight()
-        model.reparentTo(boxnode)
-        boxnode.setPos(0, -5, 0.0)
+        #model = self.loader.loadModel('models/box.egg')
+        customBox = BoxMaker(0.06, 0.12, 0.04).generate()
+        customBox.setColor(0.97, 0.99, 0.75)
+        #customBox.flattenLight()
+        customBox.reparentTo(boxnode)
+        
+        #model.reparentTo(boxnode)
+        boxnode.setPos(-0.1, 1.5, 0.65)
         boxnode.setHpr(90,90,90)
         #model.reparentTo(self.scene)
         #model.setPos(0, 0.0, 0.0)
@@ -103,7 +154,7 @@ class MyApp(ShowBase):
         bin_node = build_bullet_from_model(self.scene)
         bin_shape_node = self.render.attachNewNode(bin_node)
         self.scene.reparentTo(bin_shape_node)
-        bin_shape_node.setPos(0, 5.5, 0.2)
+        bin_shape_node.setPos(0, 2.4, 0.2)
         bin_shape_node.setHpr(90,90,90)   #or whatever you want to rotate to
         
         #self.scene.setPos(0, 5.5, 0.2)
