@@ -8,6 +8,8 @@ from panda3d.bullet import BulletPlaneShape
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletTriangleMesh
 from panda3d.bullet import BulletTriangleMeshShape
+
+from panda3d.bullet import BulletDebugNode
 """
 from panda3d.core import loadPrcFileData
 loadPrcFileData("", "window-type offscreen" ) # Spawn an offscreen buffer
@@ -65,8 +67,6 @@ class MyApp(ShowBase):
         self.scene = self.loader.loadModel("input.obj")
         self.setBackgroundColor(0.0,0.0,0.0)
 
-
-
         plight = PointLight('plight')
         plight.setColor(VBase4(0.7, 0.7, 0.7, 1))
         plnp = self.render.attachNewNode(plight)
@@ -85,36 +85,53 @@ class MyApp(ShowBase):
         self.render.setLight(dlnp)
 
         # Reparent the model to render.
-        self.scene.reparentTo(self.render)
-        # Apply scale and position transforms on the model.
-        #self.scene.setScale(0.25, 0.25, 0.25)
-        self.scene.setPos(0, 5.5, 0.2)
-        self.scene.setHpr(90,90,90)   #or whatever you want to rotate to
-        
-        angleDegrees = 0.6 * 6.0
-        angleRadians = angleDegrees * (np.pi / 180.0)
-        #self.camera.setPos(20 * np.sin(angleRadians), -20.0 * np.cos(angleRadians), 3)
-        #self.camera.setHpr(0, angleDegrees, angleDegrees)
-
-        shape = BulletBoxShape(Vec3(0.5, 0.5, 0.5))
+        shape = BulletBoxShape(Vec3(0.1, 0.1, 0.1))
         node = BulletRigidBodyNode('Box')
         node.setMass(1.0)
         node.addShape(shape)
         boxnode = self.render.attachNewNode(node)
-        boxnode.setPos(0, 0.0, 0.0)
-        boxnode.setHpr(90,90,90)   #or whatever you want to rotate to
-        world.attachRigidBody(node)
+        #boxnode.setHpr(90,90,90)   #or whatever you want to rotate to
         model = self.loader.loadModel('models/box.egg')
         model.flattenLight()
         model.reparentTo(boxnode)
-
-        boxnode.reparentTo(self.render)
+        boxnode.setPos(0, -5, 0.0)
+        boxnode.setHpr(90,90,90)
+        #model.reparentTo(self.scene)
+        #model.setPos(0, 0.0, 0.0)
+        #boxnode.reparentTo(self.render)
 
         bin_node = build_bullet_from_model(self.scene)
+        bin_shape_node = self.render.attachNewNode(bin_node)
+        self.scene.reparentTo(bin_shape_node)
+        bin_shape_node.setPos(0, 5.5, 0.2)
+        bin_shape_node.setHpr(90,90,90)   #or whatever you want to rotate to
+        
+        #self.scene.setPos(0, 5.5, 0.2)
+        #bin_node.setHpr(90,90,90)   #or whatever you want to rotate to
         world.attachRigidBody(bin_node)
+        world.attachRigidBody(node)
+
+        #shape = BulletPlaneShape(Vec3(0, 0, 1), 1)
+        #node = BulletRigidBodyNode('Ground')
+        #node.addShape(shape)
+        #np = self.render.attachNewNode(node)
+        #np.setPos(0, 7.0, 0.0)
+        #np.setHpr(90,90,90)
+        #world.attachRigidBody(node)
+
+        debugNode = BulletDebugNode('Debug')
+        debugNode.showWireframe(True)
+        debugNode.showConstraints(True)
+        debugNode.showBoundingBoxes(False)
+        debugNode.showNormals(False)
+        debugNP = self.render.attachNewNode(debugNode)
+        debugNP.show()
+        world.setDebugNode(debugNP.node())
+
+        #self.scene.reparentTo(self.render)
         self.taskMgr.add(update, 'update')
 
-        self.disableMouse()
+        #self.disableMouse()
 
 
 
